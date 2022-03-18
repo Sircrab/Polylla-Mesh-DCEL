@@ -444,6 +444,8 @@ private:
         return faces;
     }
 
+    friend class Metrics;
+
 
 public:
 
@@ -472,6 +474,8 @@ public:
             triangle_list.push_back(3*i);
 
     }
+
+
 
     Triangulation(std::string OFF_file){
         std::cout<<"Reading OFF file "<<OFF_file<<std::endl;

@@ -13,7 +13,7 @@
 #include <iostream>
 #include <fstream>
 #include <cmath>
-#include <triangulation.hpp>
+#include "triangulation.hpp"
 #include <chrono>
 #include <iomanip>
 
