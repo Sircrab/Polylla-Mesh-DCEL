@@ -2,7 +2,7 @@
 #ifndef METRICS_HPP
 #define METRICS_HPP
 
-#include "polylla.hpp"
+#include "triangulation.hpp"
 #include "utils.hpp"
 #include <vector>
 #include <climits>
@@ -18,30 +18,42 @@ class Metrics
         double min_pointDistance = __DBL_MAX__, max_pointDistance = 0;
         double min_radius = __DBL_MAX__, max_radius = 0, avg_radius = 0;
 
-        void calc_areas(Triangulation &mesh) {
-            double areaSum = 0.0;
-            for(auto& triIdx : mesh.triangle_list) {
-                const halfEdge triEdge = mesh.HalfEdges[triIdx];
-                const halfEdge nextEdge = mesh.HalfEdges[triEdge.next];
-                const halfEdge twinEdge = mesh.HalfEdges[triEdge.twin];
-                const double v1x = mesh.Vertices[twinEdge.target].x - mesh.Vertices[twinEdge.origin].x;
-                const double v1y = mesh.Vertices[twinEdge.target].y - mesh.Vertices[twinEdge.origin].y;
-                const double v2x = mesh.Vertices[nextEdge.target].x - mesh.Vertices[nextEdge.origin].x;
-                const double v2y = mesh.Vertices[nextEdge.target].x - mesh.Vertices[nextEdge.origin].x;
-                const double triArea = cross(v1x, v1y, v2x, v2y) / 2.0;
-                max_area = std::max(max_area, triArea);
-                min_area = std::min(min_area, triArea);
-                areaSum += triArea;
-            }
-            avg_area = areaSum / (mesh.faces() * 1.0);
-        }
 
-        void calc_perim(Triangulation &mesh) {
+        void calc_stats(const Triangulation& mesh) {
+            double areaSum = 0.0;
             double perimSum = 0.0;
-            for(auto& triIdx : mesh.triangle_list) {
+            double aprSum = 0.0;
+            for(auto& triIdx: mesh.triangle_list) {
                 const halfEdge firstEdge = mesh.HalfEdges[triIdx];
                 const halfEdge secondEdge = mesh.HalfEdges[firstEdge.next];
                 const halfEdge thirdEdge = mesh.HalfEdges[secondEdge.next];
+                const double area = calc_area(firstEdge, secondEdge, mesh);
+                const double perimeter = calc_perimeter(firstEdge, secondEdge, thirdEdge, mesh);
+                areaSum += area;
+                perimSum += perimeter;
+                double apr = (2*M_PI*area)/(perimeter * perimeter));
+                max_apr = std::max(max_apr, apr);
+                min_apr = std::min(min_apr, apr);
+                max_area = std::max(max_area, area);
+                min_area = std::max(min_area, area);
+                max_perimeter = std::max(max_perimeter, perimeter);
+                min_perimeter = std::min(min_perimeter, perimeter);
+            }
+            avg_area = areaSum / mesh.n_faces() * 1.0;
+            avg_apr = aprSum / mesh.n_faces() * 1.0;
+            avg_perimeter = perimSum / (mesh.n_halfedges * 1.0 / 2.0); //twice as many half edges as edges
+        }
+
+        double calc_area(const halfEdge& firstEdge, const halfEdge& secondEdge, const Triangulation& mesh) {
+            const halfEdge twinEdge = mesh.HalfEdges[firstEdge.twin];
+            const double v1x = mesh.Vertices[twinEdge.target].x - mesh.Vertices[twinEdge.origin].x;
+            const double v1y = mesh.Vertices[twinEdge.target].y - mesh.Vertices[twinEdge.origin].y;
+            const double v2x = mesh.Vertices[secondEdge.target].x - mesh.Vertices[secondEdge.origin].x;
+            const double v2y = mesh.Vertices[secondEdge.target].y - mesh.Vertices[secondEdge.origin].y;
+            return abs(cross(v1x, v1y, v2x, v2y) / 2.0);
+        }
+
+        void calc_perim(const halfEdge& firstEdge, const halfEdge& secondEdge, const halfEdge& thirdEdge, const Triangulation& mesh) {
                 double perimiter = 0.0;
                 perimiter += module(
                     mesh.Vertices[firstEdge.target].x - mesh.Vertices[firstEdge.origin].x,
@@ -55,18 +67,16 @@ class Metrics
                     mesh.Vertices[thirdEdge.target].x - mesh.Vertices[thirdEdge.origin].x,
                     mesh.Vertices[thirdEdge.target].y - mesh.Vertices[thirdEdge.origin].y
                 );
-                max_perimeter = std::max(max_perimeter, perimiter);
-                min_perimeter = std::min(min_perimeter, perimiter);
-                perimSum += perimiter;
+                return perimeter;
             }
-            avg_perimeter = perimSum / (mesh.n_halfedges * 1.0 / 2.0); //twice as many half edges as edges
+            
             
         }
 
     public:
         Metrics () {};
-        Metrics(Triangulation &mesh) {
-            calc_areas(mesh);
+        Metrics(const Triangulation &mesh) {
+            calc_stats(mesh);
         };
 };
 
