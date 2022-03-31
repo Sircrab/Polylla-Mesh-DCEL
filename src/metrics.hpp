@@ -8,6 +8,11 @@
 #include <climits>
 #include <algorithm>
 
+//Frontier edges, terminal edges, border terminal edge, area, perimetro, ratio, arista minima promedio, circunferencia circunscrita (voronoi)
+//Cantidad de triags por poligono (min, max, avg), 
+//json for output
+
+
 class Metrics 
 {
     private:
